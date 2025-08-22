@@ -1,0 +1,60 @@
+import re
+
+# =========================
+# 每日資料貼在這裡 (raw_data)
+# =========================
+raw_data = """
+Frank 02:30 175位
+（03：00打烊 無兄弟客）
+Sing!Go 2:30 14間100人 無兄弟 7:00打烊
+Babylon 2:30 158位 無兄弟 04:00打烊
+Social 02:30 65位 無兄弟 04:00打烊
+新村 03:00 100位 無兄弟 3:00打烊
+Belles 02:30  113位（03:00打烊 無兄弟客）
+The door 02:30打烊 25位 無兄弟03:00打烊
+Ai 02：40   475位 （4：45打烊 無兄弟客）
+ONE RULE  02:30  47位  無兄弟  04:00打烊
+卡拉卡拉     02:30  42位  無兄弟  04:00打烊
+WTNC         02:30  77位  無兄弟03:00打烊
+wave  02:30   684人  無兄弟客  04:30打烊
+"""
+
+# =========================
+# 程式邏輯
+# =========================
+lines = raw_data.splitlines()
+report = []
+
+for line in lines:
+    line = line.strip()
+    if not line:
+        continue
+
+    # 抓 KTV 格式 (14間100人)
+    ktv_match = re.search(r'(\d+)間(\d+)人', line)
+    if ktv_match:
+        # 店名抓第一段或空格前文字
+        store_name = line.split()[0]
+        report.append(f"{store_name}：{ktv_match.group(1)}間{ktv_match.group(2)}人")
+        continue
+
+    # 抓單純人數 (xx位/人)
+    num_match = re.search(r'(\d+)位|(\d+)人', line)
+    if num_match:
+        store_name = line.split()[0]
+        num = num_match.group(0).replace('位','').replace('人','')
+        report.append(f"{store_name} ：{num}人")
+    else:
+        store_name = line.split()[0]
+        report.append(f"{store_name} ：打烊")
+
+# 可以依需求排序
+report_sorted = sorted(report)
+
+# =========================
+# 輸出報告
+# =========================
+print("三張所報告：")
+print("《ATT大樓內店家人數報告，守望代號321》")
+for r in report_sorted:
+    print(r)
