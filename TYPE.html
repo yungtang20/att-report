@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>ATT店家人數報告生成器</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  textarea { width: 100%; height: 250px; }
+  pre { background: #f0f0f0; padding: 15px; white-space: pre-wrap; }
+  button { padding: 10px 20px; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<h2>ATT大樓店家人數報告生成器</h2>
+<p>請將資料貼入下方，點擊「生成報告」即可：</p>
+<textarea id="inputData" placeholder="請貼上店家資料..."></textarea>
+<br>
+<button onclick="generateReport()">生成報告</button>
+
+<h3>生成報告：</h3>
+<pre id="reportOutput"></pre>
+
+<script>
+const storeList = [
+  {name:"WAVE", type:"夜店", defaultCapacity:805},
+  {name:"AI", type:"夜店", defaultCapacity:750},
+  {name:"BELLES", type:"", defaultCapacity:450},
+  {name:"聚唱KTV信義店", type:"", defaultCapacity:100},
+  {name:"BABYLON酒吧", type:"", defaultCapacity:200},
+  {name:"FRANK", type:"", defaultCapacity:300},
+  {name:"Thedoor", type:"", defaultCapacity:100},
+  {name:"Onerule", type:"", defaultCapacity:100},
+  {name:"KaraKara", type:"", defaultCapacity:100},
+  {name:"WTNC", type:"", defaultCapacity:100},
+  {name:"新村", type:"", defaultCapacity:100},
+  {name:"Social", type:"", defaultCapacity:100}
+];
+
+function generateReport() {
+  const input = document.getElementById("inputData").value;
+  const lines = input.split(/\n/);
+  const reportData = {};
+
+  // 初始化全部店家為打烊
+  storeList.forEach(s => { reportData[s.name] = "打烊"; });
+
+  lines.forEach(line => {
+    storeList.forEach(s => {
+      const regex = new RegExp(s.name + ".*?(\\d+位|\\d+人|\\d+間\\d+人)", "i");
+      const match = line.match(regex);
+      if (match) {
+        // 若文字有「無營業」保留「未營業」
+        if (/無營業|未營業/.test(line)) {
+          reportData[s.name] = "未營業";
+        } else {
+          reportData[s.name] = match[1].replace("位","人");
+        }
+      }
+    });
+  });
+
+  // 製作輸出報告
+  let report = "三張所報告：\n《ATT大樓內店家人數報告，守望代號321》\n";
+  storeList.forEach(s => {
+    if (s.type) {
+      // 夜店加上容留人數
+      if (/打烊|未營業/.test(reportData[s.name])) {
+        report += `${s.name}${s.type}：${reportData[s.name]}\n`;
+      } else {
+        report += `${s.name}${s.type}：${reportData[s.name]}(容留人數：${s.defaultCapacity}人)\n`;
+      }
+    } else {
+      report += `${s.name}：${reportData[s.name]}\n`;
+    }
+  });
+
+  document.getElementById("reportOutput").textContent = report;
+}
+</script>
+
+</body>
+</html>
