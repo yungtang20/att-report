@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>守望代號320與321報告產生器</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    textarea { width: 100%; height: 150px; font-size: 14px; }
+    button { margin: 10px 5px 10px 0; padding: 8px 15px; font-size: 16px; cursor: pointer; }
+    pre { background: #f0f0f0; padding: 10px; height: 300px; overflow-y: auto; white-space: pre-wrap; border: 1px solid #ccc; }
+    .container { display: flex; gap: 20px; }
+    .box { flex: 1; }
+    .btn-group { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h1>守望代號320與321報告產生器</h1>
+  <p>請將原始輸入資料貼入左方文字框，點擊產生報告以產出守望代號320與321報告，並可立即複製結果。</p>
+  
+  <div class="container">
+    <div class="box">
+      <h3>輸入資料</h3>
+      <textarea id="inputData" placeholder="請貼入資料"></textarea>
+      <button onclick="generateReports()">產生報告</button>
+    </div>
+    <div class="box">
+      <h3>守望代號321報告</h3>
+      <div class="btn-group">
+        <button onclick="copyReport('report321')">複製守望代號321</button>
+      </div>
+      <pre id="report321"></pre>
+    </div>
+    <div class="box">
+      <h3>守望代號320報告</h3>
+      <div class="btn-group">
+        <button onclick="copyReport('report320')">複製守望代號320</button>
+      </div>
+      <pre id="report320"></pre>
+    </div>
+  </div>
+
+  <script>
+    const capacity = {
+      'WAVE夜店': 805,
+      'AI夜店': 750,
+      'Ruff夜店': 390,
+      'OBSI': 456,
+      'DD夜店': 223
+    };
+
+    const store320extra = {
+      'Ruff夜店': 994,
+      'OBSI': 258,
+      'DD夜店': 666,
+      'BARCODE酒吧': 10,
+      'UNDERLINK': 5,
+      'Sleep No More': 7,
+      'la fin': 6,
+      'Fakesober': 2,
+      'Mars': 22
+    };
+
+    const list321 = ['WAVE夜店','AI夜店','BELLES','聚唱KTV信義店','BABYLON酒吧','FRANK','Thedoor','Onerule','KaraKara','WTNC','新村','Social'];
+    const list320 = ['Ruff夜店','OBSI','DD夜店','BARCODE酒吧','UNDERLINK','Sleep No More','la fin','Fakesober','Mars'];
+
+    function generateReports() {
+      const raw = document.getElementById('inputData').value.trim();
+      const dayOfWeek = 5; // 固定星期五，可擴展自動判斷
+
+      const lines = raw.split('\n').map(l=>l.trim()).filter(l=>l);
+
+      const data321 = {}; const data320 = {};
+      list321.forEach(k=>data321[k]='打烊');
+      list320.forEach(k=>data320[k]='打烊');
+
+      // 321 店名映射
+      const map321 = {
+        'WAVE夜店': 'WAVE',
+        'AI夜店': 'AI',
+        'BELLES': 'BELLES',
+        '聚唱KTV信義店': 'SING!GO',
+        'BABYLON酒吧': 'BABYLON',
+        'FRANK': 'FRANK',
+        'Thedoor': 'THE DOOR',
+        'Onerule': 'ONE RULE',
+        'KaraKara': '卡拉卡拉',
+        'WTNC': 'WTNC',
+        '新村': '新村',
+        'Social': 'SOCIAL'
+      };
+
+      // 320 店名映射
+      const map320 = {
+        'Ruff夜店': 'RUFF夜店',
+        'OBSI': 'OBSI',
+        'DD夜店': 'DD夜店',
+        'BARCODE酒吧': 'BARCODE酒吧',
+        'UNDERLINK': 'UNDERLINK',
+        'Sleep No More': 'Sleep No More',
+        'la fin': 'la fin',
+        'Fakesober': 'Fakesober',
+        'Mars': 'Mars'
+      };
+
+      function isClosedByWeekday(name){
+        if(dayOfWeek === 1 || dayOfWeek === 2){
+          if(['Ruff夜店','DD夜店','BARCODE酒吧','UNDERLINK'].includes(name)) return true;
+        }
+        if(name === 'la fin' && [1,2,3,4,7].includes(dayOfWeek)) return true;
+        return false;
+      }
+
+      for(let line of lines){
+        for(let k in map321){
+          const chkName = map321[k];
+          if(line.toUpperCase().includes(chkName.toUpperCase())){
+            const numMatch = line.match(/(\d+)\s*(?:位|人)/);
+            if(numMatch) data321[k] = parseInt(numMatch[1])+'人';
+            else if(/打烊|未營業/.test(line)) data321[k]='打烊';
+            break;
+          }
+        }
+        for(let k in map320){
+          const chkName = map320[k];
+          if(line.toUpperCase().includes(chkName.toUpperCase())){
+            const numMatch = line.match(/(\d+)/);
+            if(numMatch) data320[k] = parseInt(numMatch[1])+'人';
+            else if(/打烊|未營業/.test(line)) data320[k]='打烊';
+            break;
+          }
+        }
+      }
+
+      // 依星期判斷未營業
+      list320.forEach(k=>{
+        if(isClosedByWeekday(k)) data320[k]='未營業';
+      });
+
+      // 321報告
+      let report321Lines = ['《ATT大樓內店家人數報告，守望代號321》'];
+      list321.forEach(store=>{
+        let val = data321[store];
+        if(store === 'WAVE夜店' && val !== '打烊' && val !== '未營業') val += `(容留人數：${capacity['WAVE夜店']}人)`;
+        if(store === 'AI夜店' && val !== '打烊' && val !== '未營業') val += `(容留人數：${capacity['AI夜店']}人)`;
+        report321Lines.push(`${store}：${val}`);
+      });
+
+      // 320報告
+      let report320Lines = ['《A19大樓內店家人數報告，守望代號320》'];
+      list320.forEach(store=>{
+        let val = data320[store];
+        if(capacity[store] && val !== '打烊' && val !== '未營業') val += `(容留人數：${capacity[store]}人)`;
+        if(val==='打烊' && store320extra[store] && !isClosedByWeekday(store)) val = store320extra[store]+'人';
+        report320Lines.push(`${store}：${val}`);
+      });
+
+      document.getElementById('report321').innerText = report321Lines.join('\n');
+      document.getElementById('report320').innerText = report320Lines.join('\n');
+    }
+
+    function copyReport(id){
+      const content = document.getElementById(id).innerText;
+      if(!content){ alert('請先產生報告！'); return; }
+      navigator.clipboard.writeText(content).then(()=>{
+        alert('已複製『'+(id==='report321'?'守望代號321':'守望代號320')+'』報告');
+      },()=>{ alert('複製失敗，請手動複製'); });
+    }
+  </script>
+</body>
+</html>
