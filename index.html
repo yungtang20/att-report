@@ -1,170 +1,89 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <title>守望代號320與321報告產生器</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    textarea { width: 100%; height: 150px; font-size: 14px; }
-    button { margin: 10px 5px 10px 0; padding: 8px 15px; font-size: 16px; cursor: pointer; }
-    pre { background: #f0f0f0; padding: 10px; height: 300px; overflow-y: auto; white-space: pre-wrap; border: 1px solid #ccc; }
-    .container { display: flex; gap: 20px; }
-    .box { flex: 1; }
-    .btn-group { margin-bottom: 10px; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>店家訊息處理工具</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px}
+.container{max-width:1200px;margin:0 auto;background:rgba(255,255,255,.95);border-radius:20px;box-shadow:0 20px 40px rgba(0,0,0,.1);backdrop-filter:blur(10px);overflow:hidden}
+.header{background:linear-gradient(135deg,#4facfe 0%,#00f2fe 100%);color:#fff;padding:30px;text-align:center}
+.header h1{font-size:2.2rem;margin-bottom:10px;text-shadow:0 2px 4px rgba(0,0,0,.3)}
+.header p{opacity:.9}
+.content{padding:30px}
+.input-section{margin-bottom:30px}
+.input-section label{display:block;font-size:1.1rem;font-weight:700;margin-bottom:10px;color:#333}
+.input-section textarea{width:100%;height:220px;padding:15px;border:2px solid #e0e0e0;border-radius:10px;font-size:1rem;resize:vertical;transition:border-color .3s}
+.input-section textarea:focus{outline:none;border-color:#4facfe;box-shadow:0 0 10px rgba(79,172,254,.3)}
+.button-section{display:flex;gap:14px;margin-bottom:24px;justify-content:center;flex-wrap:wrap}
+.btn{padding:12px 22px;font-size:1rem;font-weight:700;border:none;border-radius:10px;cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.btn-primary{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff}
+.btn-secondary{background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);color:#fff}
+.btn-copy{background:linear-gradient(135deg,#43e97b 0%,#38f9d7 100%);color:#fff}
+.btn:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(0,0,0,.2)}
+.result-title{font-size:1.1rem;font-weight:700;margin:10px 0;color:#333;border-bottom:2px solid #4facfe;padding-bottom:6px}
+.result-box{background:#f8f9fa;border:2px solid #e9ecef;border-radius:10px;padding:16px;min-height:120px;font-family:"Courier New",monospace;white-space:pre-wrap;line-height:1.6}
+@media(max-width:768px){.button-section{flex-direction:column}.content{padding:20px}}
+</style>
 </head>
 <body>
-  <h1>守望代號320與321報告產生器</h1>
-  <p>請將原始輸入資料貼入左方文字框，點擊產生報告以產出守望代號320與321報告，並可立即複製結果。</p>
-  
-  <div class="container">
-    <div class="box">
-      <h3>輸入資料</h3>
-      <textarea id="inputData" placeholder="請貼入資料"></textarea>
-      <button onclick="generateReports()">產生報告</button>
-    </div>
-    <div class="box">
-      <h3>守望代號321報告</h3>
-      <div class="btn-group">
-        <button onclick="copyReport('report321')">複製守望代號321</button>
-      </div>
-      <pre id="report321"></pre>
-    </div>
-    <div class="box">
-      <h3>守望代號320報告</h3>
-      <div class="btn-group">
-        <button onclick="copyReport('report320')">複製守望代號320</button>
-      </div>
-      <pre id="report320"></pre>
-    </div>
+<div class="container">
+  <div class="header">
+    <h1>🏪 店家訊息處理工具</h1>
+    <p>模糊比對 × 智慧整理 × 一鍵複製</p>
   </div>
+  <div class="content">
+    <div class="input-section">
+      <label for="originalMessage">原始店家訊息：</label>
+      <textarea id="originalMessage" placeholder="把整段貼進來，例：\nWave 23:40 38人…"></textarea>
+    </div>
+    <div class="button-section">
+      <button class="btn btn-primary" onclick="filterMessage()">篩選結果</button>
+      <button class="btn btn-secondary" onclick="generateReport()">生成報告</button>
+    </div>
 
-  <script>
-    const capacity = {
-      'WAVE夜店': 805,
-      'AI夜店': 750,
-      'Ruff夜店': 390,
-      'OBSI': 456,
-      'DD夜店': 223
-    };
+    <div class="result-title">篩選結果：</div>
+    <div id="filteredResult" class="result-box"></div>
 
-    const store320extra = {
-      'Ruff夜店': 994,
-      'OBSI': 258,
-      'DD夜店': 666,
-      'BARCODE酒吧': 10,
-      'UNDERLINK': 5,
-      'Sleep No More': 7,
-      'la fin': 6,
-      'Fakesober': 2,
-      'Mars': 22
-    };
+    <div class="result-title">ATT 報告：</div>
+    <div id="attReportBox" class="result-box"></div>
+    <button class="btn btn-copy" onclick="copyReport('attReportBox')">📋 複製 ATT 報告</button>
 
-    const list321 = ['WAVE夜店','AI夜店','BELLES','聚唱KTV信義店','BABYLON酒吧','FRANK','Thedoor','Onerule','KaraKara','WTNC','新村','Social'];
-    const list320 = ['Ruff夜店','OBSI','DD夜店','BARCODE酒吧','UNDERLINK','Sleep No More','la fin','Fakesober','Mars'];
+    <div class="result-title">A19 報告：</div>
+    <div id="a19ReportBox" class="result-box"></div>
+    <button class="btn btn-copy" onclick="copyReport('a19ReportBox')">📋 複製 A19 報告</button>
+  </div>
+</div>
 
-    function generateReports() {
-      const raw = document.getElementById('inputData').value.trim();
-      const dayOfWeek = new Date().getDay(); // 0=日,1=一,...
+<script>
+// ====== 模糊比對關鍵字 -> 正式店名 ======
+const storeAliases = {
+  "wave":"WAVE 夜店","ai":"AI 夜店","belles":"BELLES","frank":"FRANK","door":"The door","rule":"One rule","kara":"Kara Kara","social":"Social","wtnc":"WTNC","babylon":"BABYLON 酒吧","sing":"聚唱KTV信義店","新村":"新村",
+  "ruff":"Ruff 夜店","obsi":"OBSI","dd":"DD 夜店","barcode":"BARCODE 酒吧","underlink":"UNDERLINK","sleep":"Sleep No More","mars":"Mars","cafe from mars":"Mars","la fin":"la fin","fakesober":"Fakesober"
+};
+const attStores=[{name:"WAVE 夜店",capacity:"805人"},{name:"AI 夜店",capacity:"750人"},{name:"BELLES",capacity:""},{name:"聚唱KTV信義店",capacity:""},{name:"BABYLON 酒吧",capacity:""},{name:"FRANK",capacity:""},{name:"The door",capacity:""},{name:"One rule",capacity:""},{name:"Kara Kara",capacity:""},{name:"WTNC",capacity:""},{name:"新村",capacity:""},{name:"Social",capacity:""}];
+const a19Stores=[{name:"Ruff 夜店",capacity:"390人",default:"未營業"},{name:"OBSI",capacity:"456人",default:"未營業"},{name:"DD 夜店",capacity:"223人",default:"未營業"},{name:"BARCODE 酒吧",capacity:"",default:"未營業"},{name:"UNDERLINK",capacity:"",default:"未營業"},{name:"Sleep No More",capacity:"",default:"打烊"},{name:"la fin",capacity:"",default:"未營業"},{name:"Fakesober",capacity:"",default:"打烊"},{name:"Mars",capacity:"",default:"打烊"}];
 
-      const lines = raw.split('\n').map(l=>l.trim()).filter(l=>l);
-
-      const data321 = {}; const data320 = {};
-      list321.forEach(k=>data321[k]='未營業');
-      list320.forEach(k=>data320[k]='未營業');
-
-      const map321 = {
-        'WAVE夜店': 'WAVE',
-        'AI夜店': 'AI',
-        'BELLES': 'BELLES',
-        '聚唱KTV信義店': 'SING!GO',
-        'BABYLON酒吧': 'BABYLON',
-        'FRANK': 'FRANK',
-        'Thedoor': 'THE DOOR',
-        'Onerule': 'ONE RULE',
-        'KaraKara': '卡拉卡拉',
-        'WTNC': 'WTNC',
-        '新村': '新村',
-        'Social': 'SOCIAL'
-      };
-      const map320 = {
-        'Ruff夜店': 'RUFF夜店',
-        'OBSI': 'OBSI',
-        'DD夜店': 'DD夜店',
-        'BARCODE酒吧': 'BARCODE酒吧',
-        'UNDERLINK': 'UNDERLINK',
-        'Sleep No More': 'Sleep No More',
-        'la fin': 'la fin',
-        'Fakesober': 'Fakesober',
-        'Mars': 'Mars'
-      };
-
-      function isClosedByWeekday(name){
-        if(dayOfWeek === 1 || dayOfWeek === 2){
-          if(['Ruff夜店','DD夜店','BARCODE酒吧','UNDERLINK'].includes(name)) return true;
-        }
-        if(name === 'la fin' && [1,2,3,4,0].includes(dayOfWeek)) return true;
-        return false;
-      }
-
-      for(let line of lines){
-        for(let k in map321){
-          const chkName = map321[k];
-          if(line.toUpperCase().includes(chkName.toUpperCase())){
-            if(k==='聚唱KTV信義店'){
-              const match = line.match(/\d+間\d+人/);
-              data321[k] = match ? match[0] : '未營業';
-            } else {
-              const numMatch = line.match(/(\d+)/);
-              if(numMatch) data321[k] = parseInt(numMatch[1])+'人';
-              else if(/打烊/.test(line)) data321[k]='打烊';
-              else data321[k]='未營業';
-            }
-            break;
-          }
-        }
-        for(let k in map320){
-          const chkName = map320[k];
-          if(line.toUpperCase().includes(chkName.toUpperCase())){
-            const numMatch = line.match(/(\d+)/);
-            if(numMatch) data320[k] = parseInt(numMatch[1])+'人';
-            else if(/打烊/.test(line)) data320[k]='打烊';
-            else data320[k]='未營業';
-            break;
-          }
-        }
-      }
-
-      list320.forEach(k=>{
-        if(isClosedByWeekday(k)) data320[k]='未營業';
-      });
-
-      let report321Lines = ['《ATT大樓內店家人數報告，守望代號321》'];
-      list321.forEach(store=>{
-        let val = data321[store];
-        if(val!=='打烊' && val!=='未營業' && store in capacity) val += `(容留人數：${capacity[store]}人)`;
-        report321Lines.push(`${store}：${val}`);
-      });
-
-      let report320Lines = ['《A19大樓內店家人數報告，守望代號320》'];
-      list320.forEach(store=>{
-        let val = data320[store];
-        if(val==='打烊' && store320extra[store] && !isClosedByWeekday(store)) val = store320extra[store]+'人';
-        if(val!=='打烊' && val!=='未營業' && store in capacity) val += `(容留人數：${capacity[store]}人)`;
-        report320Lines.push(`${store}：${val}`);
-      });
-
-      document.getElementById('report321').innerText = report321Lines.join('\n');
-      document.getElementById('report320').innerText = report320Lines.join('\n');
-    }
-
-    function copyReport(id){
-      const content = document.getElementById(id).innerText;
-      if(!content){ alert('請先產生報告！'); return; }
-      navigator.clipboard.writeText(content).then(()=>{
-        alert('已複製『'+(id==='report321'?'守望代號321':'守望代號320')+'』報告');
-      },()=>{ alert('複製失敗，請手動複製'); });
-    }
-  </script>
+function filterMessage(){
+  let msg=document.getElementById('originalMessage').value;
+  msg=msg.replace(/\d{1,2}[：:]\d{2}\s*打烊/g,'').replace(/打烊\s*\d{1,2}[：:]\d{2}/g,'').replace(/\d{1,2}[：:]\d{2}/g,'').replace(/無兄弟客?/g,'').replace(/[（(][^）)]*[）)]/g,'').replace(/(\d+)[位人](?!.*sing!go)/gi,'$1').replace(/[：:]/g,'').replace(/\s+/g,' ').trim();
+  document.getElementById('filteredResult').textContent=msg;
+}
+function normalizeName(raw){const lower=raw.toLowerCase();for(const key in storeAliases){if(lower.includes(key.toLowerCase()))return storeAliases[key];}return null;}
+function extractStatus(line){const lower=line.toLowerCase();if(lower.includes('無營業'))return '未營業';const withoutTimes=line.replace(/\d{1,2}[：:]\d{2}/g,'');if(lower.includes('sing')){const m=withoutTimes.match(/(\d+間\d+人)/);if(m)return m[1];}let m=withoutTimes.match(/(\d+)\s*[位人]/);if(!m)m=withoutTimes.match(/(?:^|[^\d])(\d{1,4})(?!\d)/);if(m)return (m[1]||m[0]).replace(/[^\d]/g,'');if(lower.includes('打烊'))return '打烊';return '預設';}
+function generateReport(){
+  const original=document.getElementById('originalMessage').value;
+  const storeData={};const lines=original.split('\n');
+  for(const rawLine of lines){const line=rawLine.trim();if(!line)continue;const namePart=line.split(/[：:]/)[0];const normalized=normalizeName(namePart);if(!normalized)continue;const status=extractStatus(line);storeData[normalized]=status;}
+  let attReport="三張所報告：\n《ATT大樓內店家人數報告，守望代號321》\n";
+  attStores.forEach(s=>{let status=storeData[s.name]??"預設";if(/^\d+$/.test(status))status+="人";const cap=s.capacity?`(容留人數：${s.capacity})`:"";attReport+=`${s.name}：${status}${cap}\n`;});
+  let a19Report="三張所報告：\n《A19大樓內店家人數報告，守望代號320》\n";
+  a19Stores.forEach(s=>{let status=storeData[s.name]??s.default;if(/^\d+$/.test(status))status+="人";const cap=s.capacity?`（容留人數：${s.capacity}）`:"";a19Report+=`${s.name}：${status}${cap}\n`;});
+  document.getElementById('attReportBox').textContent=attReport;
+  document.getElementById('a19ReportBox').textContent=a19Report;
+}
+function copyReport(id){const text=document.getElementById(id).textContent;navigator.clipboard.writeText(text).then(()=>alert("📋 報告已複製到剪貼簿！"));}
+</script>
 </body>
 </html>
